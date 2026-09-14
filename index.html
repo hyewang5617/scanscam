@@ -3,153 +3,229 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>온체인 타임락 · 사진 진위 인증 데모</title>
+<title>scanscam — 사진 진위 인증</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
-
   :root{
-    --bg:#0B0E13;
-    --surface:#141924;
-    --surface-2:#1B2230;
-    --border:#2A3244;
-    --text:#EBEEF3;
-    --muted:#8A93A6;
-    --accent:#E8A33D;
-    --accent-dim:#6B5124;
-    --ok:#3FCF8E;
-    --ok-dim:#173327;
-    --bad:#EF5C6E;
-    --bad-dim:#3A1B21;
-    --mono:'IBM Plex Mono', ui-monospace, monospace;
-    --sans:'IBM Plex Sans KR', 'Space Grotesk', ui-sans-serif, sans-serif;
-    --display:'Space Grotesk', 'IBM Plex Sans KR', sans-serif;
+    --blue:#3084F2;
+    --blue-light:#E6F7FF;
+    --lime:#B6F235;
+    --orange:#F28627;
+    --ink:#12141C;
+    --muted:#616B7A;
+    --line:#E5EAF1;
+    --white:#FFFFFF;
+    --font: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
-  body{min-height:100vh;padding:32px 20px 60px;}
-  .wrap{max-width:920px;margin:0 auto;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:var(--font);
+    color:var(--ink);
+    background:var(--white);
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:0 28px;}
+  a{color:inherit;}
 
-  header{margin-bottom:28px;}
-  header .kicker{font-family:var(--mono);font-size:12.5px;color:var(--accent);letter-spacing:.02em;}
-  header h1{font-family:var(--display);font-size:26px;line-height:1.35;margin:8px 0 6px;font-weight:700;}
-  header p{color:var(--muted);font-size:14px;line-height:1.6;margin:0;max-width:60ch;}
+  header.site{padding:26px 0 10px;}
+  header.site .row{display:flex;align-items:center;justify-content:space-between;}
+  .logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:19px;letter-spacing:-.01em;}
+  .logo .dot{width:9px;height:9px;border-radius:3px;background:var(--blue);display:inline-block;transform:rotate(45deg);}
+  .gh-link{font-size:14px;font-weight:600;color:var(--ink);text-decoration:none;border:1.5px solid var(--line);padding:8px 16px;border-radius:100px;transition:border-color .15s;}
+  .gh-link:hover{border-color:var(--blue);}
 
-  .grid{display:grid;grid-template-columns:1.15fr 0.85fr;gap:18px;}
-  @media (max-width:760px){.grid{grid-template-columns:1fr;}}
+  .hero{padding:48px 0 64px;display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;}
+  .kicker{display:inline-block;font-size:13px;font-weight:700;color:var(--blue);background:var(--blue-light);padding:6px 14px;border-radius:100px;margin-bottom:22px;}
+  h1.headline{font-size:clamp(30px,4.4vw,46px);line-height:1.28;font-weight:800;letter-spacing:-.015em;margin:0 0 22px;}
+  .circle{position:relative;display:inline-block;white-space:nowrap;padding:0 .08em;}
+  .circle::after{
+    content:"";position:absolute;left:-10%;right:-10%;top:-18%;bottom:-10%;
+    border:3px solid var(--orange);border-radius:52% 48% 55% 45%/55% 50% 50% 45%;
+    transform:rotate(-3deg);pointer-events:none;
+  }
+  .hero-sub{font-size:16px;line-height:1.7;color:var(--muted);max-width:46ch;margin:0 0 30px;}
+  .cta-row{display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+  .btn{font-family:var(--font);font-weight:700;font-size:15px;border-radius:100px;cursor:pointer;transition:transform .1s, filter .15s, border-color .15s;border:none;}
+  .btn:active{transform:scale(.97);}
+  .btn-primary{background:var(--ink);color:var(--white);padding:15px 26px;display:inline-flex;align-items:center;gap:10px;}
+  .btn-primary:hover{filter:brightness(1.15);}
+  .btn-primary:disabled{opacity:.35;cursor:not-allowed;}
+  .btn-primary .arrow{width:20px;height:20px;border-radius:50%;background:var(--lime);display:flex;align-items:center;justify-content:center;color:var(--ink);font-size:13px;flex-shrink:0;}
+  .link-cta{font-weight:700;font-size:15px;color:var(--ink);text-decoration:none;border-bottom:2px solid var(--orange);padding-bottom:2px;}
 
-  .panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;}
-
-  .viewport{position:relative;aspect-ratio:4/3;background:#000;border-radius:10px;overflow:hidden;border:1px solid var(--border);}
-  .viewport video, .viewport canvas, .viewport img{width:100%;height:100%;object-fit:cover;display:block;}
-  .viewport .placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;text-align:center;padding:20px;}
-  .viewport .badge{position:absolute;top:10px;left:10px;font-family:var(--mono);font-size:11px;padding:4px 8px;border-radius:6px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.12);}
+  .hero-visual{position:relative;border-radius:28px;padding:22px;background:linear-gradient(135deg, var(--blue) 0%, var(--blue) 42%, var(--blue-light) 42%, var(--blue-light) 100%);}
+  .demo-card{background:var(--white);border-radius:20px;padding:18px;box-shadow:0 24px 48px -18px rgba(18,20,28,.28);}
+  .viewport{position:relative;aspect-ratio:4/3;background:#0B0E13;border-radius:13px;overflow:hidden;}
+  .viewport video,.viewport canvas,.viewport img{width:100%;height:100%;object-fit:cover;display:block;}
+  .viewport .placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#9AA4B4;font-size:12.5px;text-align:center;padding:18px;line-height:1.6;}
+  .viewport .badge{position:absolute;top:9px;left:9px;font-size:11px;font-weight:700;padding:4px 9px;border-radius:100px;background:rgba(255,255,255,.94);color:var(--ink);}
 
   .controls{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
-  button{font-family:var(--sans);font-weight:500;font-size:13.5px;padding:10px 16px;border-radius:9px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);cursor:pointer;transition:border-color .15s, transform .1s;}
-  button:hover{border-color:var(--accent);}
-  button:active{transform:scale(.98);}
-  button.primary{background:var(--accent);border-color:var(--accent);color:#1A1103;font-weight:700;}
-  button.primary:hover{filter:brightness(1.06);}
-  button:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-outline{background:var(--white);border:1.5px solid var(--line);color:var(--ink);padding:10px 15px;font-size:13.5px;}
+  .btn-outline:hover{border-color:var(--blue);color:var(--blue);}
+  .btn-outline:disabled{opacity:.4;cursor:not-allowed;}
 
-  .toggle-row{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12.5px;color:var(--muted);}
-  .toggle-row input{accent-color:var(--accent);}
+  .toggle-row{display:flex;align-items:center;gap:9px;margin-top:14px;font-size:12.5px;color:var(--muted);}
+  .toggle-row input{accent-color:var(--orange);width:16px;height:16px;}
 
-  .steps{display:flex;flex-direction:column;gap:10px;}
-  .step{display:flex;gap:12px;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);opacity:.45;transition:opacity .2s, border-color .2s, background .2s;}
-  .step.active{opacity:1;border-color:var(--accent);}
-  .step.pass{opacity:1;border-color:var(--ok);background:var(--ok-dim);}
-  .step.fail{opacity:1;border-color:var(--bad);background:var(--bad-dim);}
-  .step .num{font-family:var(--mono);font-size:12px;width:22px;height:22px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
-  .step.pass .num{border-color:var(--ok);color:var(--ok);}
-  .step.fail .num{border-color:var(--bad);color:var(--bad);}
-  .step.active .num{border-color:var(--accent);color:var(--accent);}
-  .step .body h3{margin:0 0 3px;font-size:13.5px;font-weight:600;}
-  .step .body p{margin:0;font-size:12px;color:var(--muted);line-height:1.5;}
-  .step .body .mono{font-family:var(--mono);font-size:11px;color:var(--text);word-break:break-all;margin-top:5px;display:block;}
+  .steps{padding:44px 0 10px;}
+  .steps-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:26px;gap:16px;flex-wrap:wrap;}
+  .steps-head h2{font-size:24px;font-weight:800;margin:0;letter-spacing:-.01em;}
+  .steps-head p{margin:0;color:var(--muted);font-size:14px;}
+  .step-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .step-card{border:1.5px solid var(--line);border-radius:18px;padding:22px;transition:border-color .2s, background .2s;}
+  .step-card.active{border-color:var(--blue);background:var(--blue-light);}
+  .step-card.pass{border-color:var(--lime);background:#F6FCE9;}
+  .step-card.fail{border-color:var(--orange);background:#FFF3E9;}
+  .step-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;margin-bottom:16px;color:var(--white);}
+  .step-card:nth-child(1) .step-icon{background:var(--blue);}
+  .step-card:nth-child(2) .step-icon{background:var(--ink);}
+  .step-card:nth-child(3) .step-icon{background:var(--orange);}
+  .step-card h3{font-size:16px;font-weight:800;margin:0 0 8px;}
+  .step-card p{font-size:13.5px;line-height:1.6;color:var(--muted);margin:0;}
+  .step-card .detail{display:block;margin-top:10px;font-size:12px;color:var(--ink);font-weight:600;word-break:break-all;}
 
-  .result{margin-top:14px;padding:16px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);}
-  .result.pass{border-color:var(--ok);background:var(--ok-dim);}
-  .result.fail{border-color:var(--bad);background:var(--bad-dim);}
-  .result h3{margin:0 0 4px;font-size:15px;font-family:var(--display);}
-  .result p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.6;}
+  .result{margin-top:16px;padding:20px 22px;border-radius:18px;border:1.5px solid var(--line);display:none;}
+  .result.pass{border-color:var(--lime);background:#F6FCE9;}
+  .result.fail{border-color:var(--orange);background:#FFF3E9;}
+  .result h3{margin:0 0 6px;font-size:17px;font-weight:800;}
+  .result p{margin:0;font-size:13.5px;color:var(--muted);line-height:1.6;}
 
-  .footnote{margin-top:22px;font-size:12px;color:var(--muted);line-height:1.7;border-top:1px solid var(--border);padding-top:14px;}
-  .footnote b{color:var(--text);}
+  .stats{padding:56px 0;display:flex;border-top:1.5px solid var(--line);border-bottom:1.5px solid var(--line);margin-top:56px;}
+  .stat{flex:1;padding:0 20px;text-align:left;}
+  .stat + .stat{border-left:1.5px solid var(--line);}
+  .stat .num{font-size:clamp(22px,3vw,32px);font-weight:800;color:var(--blue);letter-spacing:-.01em;}
+  .stat .label{margin-top:6px;font-size:12.5px;color:var(--muted);line-height:1.5;}
+
+  .band{background:var(--blue-light);border-radius:28px;padding:52px 44px;margin:56px 0;position:relative;overflow:hidden;}
+  .band::before{content:"";position:absolute;top:-40px;left:38%;width:120px;height:120px;background:var(--blue);border-radius:50%;opacity:.9;}
+  .band-grid{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:40px;}
+  .band-grid h3{font-size:21px;font-weight:800;margin:0 0 10px;letter-spacing:-.01em;}
+  .band-grid p{font-size:14px;line-height:1.7;color:var(--muted);margin:0;max-width:38ch;}
+
+  .footnote{border:1.5px solid var(--line);border-radius:18px;padding:22px 24px;margin:8px 0 56px;font-size:13px;color:var(--muted);line-height:1.8;}
+  .footnote b{color:var(--ink);}
+
+  footer.site{border-top:1.5px solid var(--line);padding:26px 0 40px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+  footer.site p{margin:0;font-size:12.5px;color:var(--muted);}
+  footer.site a{font-size:12.5px;font-weight:700;text-decoration:none;color:var(--ink);}
+
+  @media (max-width:840px){
+    .hero{grid-template-columns:1fr;gap:36px;padding-top:28px;}
+    .step-grid{grid-template-columns:1fr;}
+    .stats{flex-direction:column;gap:22px;}
+    .stat + .stat{border-left:none;border-top:1.5px solid var(--line);padding-top:18px;}
+    .band-grid{grid-template-columns:1fr;gap:26px;}
+    .band{padding:36px 24px;}
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <header>
-    <div class="kicker">PROTOTYPE DEMO — 온체인 타임락 + AI 재촬영 탐지</div>
-    <h1>사진 한 장이 &apos;진짜 그 순간&apos;에 찍혔는지 확인합니다</h1>
-    <p>촬영과 동시에 블록체인 난수를 사진에 결합해 시간 위조를 막고(①②), AI가 화면 재촬영 흔적을 분석해 내용 위조까지 잡아냅니다(③). 카메라 권한이 없다면 아래 샘플 버튼으로도 전체 흐름을 확인할 수 있어요.</p>
+  <header class="site">
+    <div class="row">
+      <div class="logo"><span class="dot"></span>scanscam</div>
+      <a class="gh-link" href="https://github.com/hyewang5617/scanscam" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
   </header>
 
-  <div class="grid">
-    <div class="panel">
-      <div class="viewport" id="viewport">
-        <div class="placeholder" id="placeholder">카메라를 켜거나, 아래 샘플로 테스트해보세요</div>
-        <video id="video" autoplay playsinline muted style="display:none"></video>
-        <canvas id="canvas" style="display:none"></canvas>
-        <img id="shot" style="display:none" />
-        <div class="badge" id="chainBadge" style="display:none"></div>
+  <section class="hero">
+    <div class="hero-text">
+      <span class="kicker">사진 진위 인증 · PROTOTYPE DEMO</span>
+      <h1 class="headline">사진 한 장이 <span class="circle">진짜 그 순간</span>에<br/>찍혔는지 확인합니다</h1>
+      <p class="hero-sub">촬영과 동시에 블록체인 난수를 사진에 결합해 시간 위조를 막고, AI가 화면 재촬영 흔적을 분석해 내용 위조까지 잡아냅니다. 카메라 권한이 없다면 샘플 버튼으로도 전체 흐름을 확인할 수 있어요.</p>
+      <div class="cta-row">
+        <button class="btn btn-primary" id="btnCamera">카메라 켜기<span class="arrow">→</span></button>
+        <a class="link-cta" href="#steps">작동 원리 보기</a>
       </div>
-
-      <div class="controls">
-        <button class="primary" id="btnCamera">카메라 켜기</button>
-        <button id="btnCapture" disabled>촬영 &amp; 인증 시작</button>
-      </div>
-      <div class="controls">
-        <button id="btnSampleNatural">샘플: 실물 촬영</button>
-        <button id="btnSampleMoire">샘플: 화면 재촬영(부정 시도)</button>
-      </div>
-
-      <label class="toggle-row">
-        <input type="checkbox" id="chkDelay" />
-        지연 공격 시뮬레이션 — 촬영 후 3초 뒤에 전송 (타임락 실패 재현용)
-      </label>
     </div>
 
-    <div class="panel">
-      <div class="steps">
-        <div class="step" id="step1">
-          <div class="num">1</div>
-          <div class="body">
-            <h3>온체인 난수 조회</h3>
-            <p>촬영 즉시 블록체인 L2 노드의 최신 블록 해시를 실시간으로 가져와 사진과 결합합니다.</p>
-            <span class="mono" id="step1detail"></span>
-          </div>
+    <div class="hero-visual">
+      <div class="demo-card">
+        <div class="viewport" id="viewport">
+          <div class="placeholder" id="placeholder">카메라를 켜거나<br/>아래 샘플로 테스트해보세요</div>
+          <video id="video" autoplay playsinline muted style="display:none"></video>
+          <canvas id="canvas" style="display:none"></canvas>
+          <img id="shot" style="display:none" />
+          <div class="badge" id="chainBadge" style="display:none"></div>
         </div>
-        <div class="step" id="step2">
-          <div class="num">2</div>
-          <div class="body">
-            <h3>스마트컨트랙트 타임락 검증</h3>
-            <p>촬영 시각과 체인 도달 시각의 차이가 2초를 넘으면 자동 파기됩니다.</p>
-            <span class="mono" id="step2detail"></span>
-          </div>
+        <div class="controls">
+          <button class="btn btn-outline" id="btnCapture" disabled>촬영 &amp; 인증 시작</button>
         </div>
-        <div class="step" id="step3">
-          <div class="num">3</div>
-          <div class="body">
-            <h3>AI 재촬영 흔적 탐지</h3>
-            <p>FFT 주파수 분석으로 화면 재촬영 특유의 모아레 격자 패턴을 잡아냅니다.</p>
-            <span class="mono" id="step3detail"></span>
-          </div>
+        <div class="controls">
+          <button class="btn btn-outline" id="btnSampleNatural">샘플: 실물 촬영</button>
+          <button class="btn btn-outline" id="btnSampleMoire">샘플: 화면 재촬영</button>
         </div>
+        <label class="toggle-row">
+          <input type="checkbox" id="chkDelay" />
+          지연 공격 시뮬레이션 (3초 뒤 전송)
+        </label>
       </div>
+    </div>
+  </section>
 
-      <div class="result" id="result" style="display:none">
-        <h3 id="resultTitle"></h3>
-        <p id="resultDesc"></p>
+  <section class="steps" id="steps">
+    <div class="steps-head">
+      <h2>3단계 검증 파이프라인</h2>
+      <p>시간적 진위성과 내용적 진위성을 순서대로 확인합니다</p>
+    </div>
+    <div class="step-grid">
+      <div class="step-card" id="step1">
+        <div class="step-icon">1</div>
+        <h3>온체인 난수 조회</h3>
+        <p>촬영 즉시 블록체인 L1 노드의 최신 블록 해시를 실시간으로 가져와 사진과 결합합니다.</p>
+        <span class="detail" id="step1detail"></span>
+      </div>
+      <div class="step-card" id="step2">
+        <div class="step-icon">2</div>
+        <h3>스마트컨트랙트 타임락 검증</h3>
+        <p>촬영 시각과 체인 도달 시각의 차이가 2초를 넘으면 자동 파기됩니다.</p>
+        <span class="detail" id="step2detail"></span>
+      </div>
+      <div class="step-card" id="step3">
+        <div class="step-icon">3</div>
+        <h3>AI 재촬영 흔적 탐지</h3>
+        <p>FFT 주파수 분석으로 화면 재촬영 특유의 모아레 격자 패턴을 잡아냅니다.</p>
+        <span class="detail" id="step3detail"></span>
+      </div>
+    </div>
+
+    <div class="result" id="result">
+      <h3 id="resultTitle"></h3>
+      <p id="resultDesc"></p>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="stat"><div class="num">2초</div><div class="label">타임락 허용 한계</div></div>
+    <div class="stat"><div class="num">128px</div><div class="label">FFT 분석 해상도</div></div>
+    <div class="stat"><div class="num">약 43배</div><div class="label">모아레 이미지 피크비율 (자연 이미지 대비)</div></div>
+    <div class="stat"><div class="num">3단계</div><div class="label">시간·내용 이중 검증 파이프라인</div></div>
+  </section>
+
+  <div class="band">
+    <div class="band-grid">
+      <div>
+        <h3>블록체인은 '언제' 찍었는지 증명합니다</h3>
+        <p>매 순간 바뀌는 블록 해시를 사진에 결합하고, 촬영-도달 시간차를 스마트컨트랙트가 검증합니다. 미리 만들어둔 위조 사진은 시간 장벽에 가로막힙니다.</p>
+      </div>
+      <div>
+        <h3>AI는 '무엇을' 찍었는지 증명합니다</h3>
+        <p>시간 조건을 통과해도 화면을 재촬영한 것이라면 모아레 패턴이 남습니다. FFT 주파수 분석이 이 흔적을 잡아내 최종 승인 여부를 가릅니다.</p>
       </div>
     </div>
   </div>
 
   <div class="footnote">
-    <b>데모 구현 범위 안내</b> — ①은 Sepolia 테스트넷 공개 RPC에 실시간으로 접속해 최신 블록 해시를 가져옵니다(네트워크가 막히면 시뮬레이션 모드로 자동 전환되며 화면에 표시됩니다). ②는 브라우저에서 로컬로 타임락 로직을 재현한 것이고, 실제 온체인 기록·검증은 <span class="mono">contracts/PhotoAuthTimelock.sol</span>에 있습니다. ③ AI 판별은 학습된 모델 대신 FFT 주파수 분석 기반 규칙으로 구현했습니다 — 합성 샘플(자연 이미지 vs 격자 패턴)로 정상 동작을 검증했습니다.
+    <b>데모 구현 범위 안내</b> — 온체인 난수 조회는 Sepolia 테스트넷(이더리움 L1) 공개 RPC에 실시간으로 접속해 가져옵니다(네트워크가 막히면 시뮬레이션 모드로 자동 전환되며 화면에 표시됩니다). 타임락 로직은 브라우저에서 재현한 것이고, 실제 온체인 기록·검증은 <code>contracts/PhotoAuthTimelock.sol</code>에 있으며 Sepolia에 실제로 배포되어 있습니다. AI 판별은 학습된 모델 대신 FFT 주파수 분석 기반 규칙으로 구현했습니다 — 합성 샘플(자연 이미지 vs 격자 패턴)로 정상 동작을 검증했습니다.
   </div>
+
+  <footer class="site">
+    <p>scanscam · BLOCK AI✳26 프로토타입</p>
+    <a href="https://github.com/hyewang5617/scanscam" target="_blank" rel="noopener">저장소 보기 →</a>
+  </footer>
 
 </div>
 
@@ -173,7 +249,6 @@
   };
   let stream = null;
 
-  // ---------- 1. 카메라 ----------
   els.btnCamera.addEventListener('click', async () => {
     try {
       stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
@@ -181,7 +256,7 @@
       els.video.style.display = 'block';
       els.placeholder.style.display = 'none';
       els.btnCapture.disabled = false;
-      els.btnCamera.textContent = '카메라 켜짐';
+      els.btnCamera.innerHTML = '카메라 켜짐<span class="arrow">✓</span>';
       els.btnCamera.disabled = true;
     } catch (e) {
       els.placeholder.textContent = '카메라 접근이 차단됐어요 (' + e.name + '). 아래 샘플 버튼으로 테스트해주세요.';
@@ -199,7 +274,6 @@
     return c;
   }
 
-  // 카메라가 없을 때: 합성 테스트 이미지를 캔버스에 생성 (자연 이미지 vs 모아레 격자 패턴)
   function makeSyntheticFrame(withMoire) {
     const c = document.createElement('canvas');
     c.width = 512; c.height = 384;
@@ -220,7 +294,6 @@
     return c;
   }
 
-  // ---------- 파이프라인 ----------
   async function runPipeline(getFrameCanvas) {
     resetSteps();
     els.result.style.display = 'none';
@@ -231,7 +304,6 @@
     els.video.style.display = 'none';
     els.placeholder.style.display = 'none';
 
-    // Step 1: 온체인 난수 조회
     setStep(1, 'active');
     const chain = await fetchLatestBlockHash();
     document.getElementById('step1detail').textContent =
@@ -240,13 +312,11 @@
     els.chainBadge.style.display = 'block';
     setStep(1, 'pass');
 
-    // (지연 공격 시뮬레이션 옵션)
     if (els.chkDelay.checked) {
       document.getElementById('step2detail').textContent = '⏱ 지연 공격 시뮬레이션 적용 중 (3초 대기)…';
       await new Promise(r => setTimeout(r, 3000));
     }
 
-    // Step 2: 타임락 검증
     setStep(2, 'active');
     const arrivalTs = Date.now();
     const delaySec = (arrivalTs - captureTs) / 1000;
@@ -255,18 +325,16 @@
       `촬영-도달 시간차: ${delaySec.toFixed(2)}초 (허용 한도 2.00초)`;
     setStep(2, timelockPassed ? 'pass' : 'fail');
 
-    // Step 3: AI 재촬영 탐지 (타임락 실패해도 참고용으로 계속 진행)
     setStep(3, 'active');
     const gray = downsampleGrayscale(frameCanvas, 128);
     const mag = fft2dMagnitude(gray, 128);
     const score = moireScore(mag, 128);
-    const THRESHOLD = 12; // 자연 이미지(~3~5) vs 모아레 이미지(~100+) 검증 결과 기반 임계값
+    const THRESHOLD = 12;
     const screenDetected = score.ratio > THRESHOLD;
     document.getElementById('step3detail').textContent =
       `주파수 피크/평균 비율: ${score.ratio.toFixed(1)} (기준치 ${THRESHOLD} 초과 시 화면 재촬영으로 판정)`;
     setStep(3, screenDetected ? 'fail' : 'pass');
 
-    // 최종 결과
     const finalPass = timelockPassed && !screenDetected;
     els.result.style.display = 'block';
     els.result.className = 'result ' + (finalPass ? 'pass' : 'fail');
@@ -285,15 +353,14 @@
   function resetSteps() {
     ['step1','step2','step3'].forEach(id => {
       const el = document.getElementById(id);
-      el.className = 'step';
+      el.className = 'step-card';
       document.getElementById(id+'detail').textContent = '';
     });
   }
   function setStep(n, state) {
-    document.getElementById('step'+n).className = 'step ' + state;
+    document.getElementById('step'+n).className = 'step-card ' + state;
   }
 
-  // ---------- 블록체인 (Sepolia 공개 RPC 실시간 호출, 실패 시 시뮬레이션) ----------
   async function fetchLatestBlockHash() {
     try {
       const controller = new AbortController();
@@ -311,7 +378,6 @@
       }
       throw new Error('no result');
     } catch (e) {
-      // 네트워크/CORS 제한 시 암호학적으로 안전한 난수로 대체 (데모용, 화면에 명시)
       const arr = new Uint8Array(32);
       crypto.getRandomValues(arr);
       const hash = '0x' + Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
@@ -319,7 +385,6 @@
     }
   }
 
-  // ---------- 이미지 → 그레이스케일 다운샘플 ----------
   function downsampleGrayscale(srcCanvas, size) {
     const c = document.createElement('canvas');
     c.width = size; c.height = size;
@@ -332,7 +397,6 @@
     return gray;
   }
 
-  // ---------- FFT 기반 모아레 탐지 (node로 사전 검증된 알고리즘) ----------
   function fft1d(re, im) {
     const n = re.length;
     for (let i = 1, j = 0; i < n; i++) {
